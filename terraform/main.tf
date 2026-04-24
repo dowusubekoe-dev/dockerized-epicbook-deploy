@@ -3,8 +3,41 @@ provider "aws" {
   region = var.aws_region
 }
 
+resource "aws_vpc" "epicbook_vpc" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  tags                 = { Name = "epicbook-vpc" }
+}
+
+resource "aws_subnet" "epicbook_subnet" {
+  vpc_id                  = aws_vpc.epicbook_vpc.id
+  cidr_block              = "10.0.1.0/24"
+  map_public_ip_on_launch = true
+  availability_zone       = "${var.aws_region}a"
+  tags                    = { Name = "epicbook-public-subnet" }
+}
+
+resource "aws_internet_gateway" "epicbook_igw" {
+  vpc_id = aws_vpc.epicbook_vpc.id
+  tags   = { Name = "epicbook-igw" }
+}
+
+resource "aws_route_table" "epicbook_rt" {
+  vpc_id = aws_vpc.epicbook_vpc.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.epicbook_igw.id
+  }
+}
+
+resource "aws_route_table_association" "a" {
+  subnet_id      = aws_subnet.epicbook_subnet.id
+  route_table_id = aws_route_table.epicbook_rt.id
+}
+
 resource "aws_security_group" "epicbook_sg" {
   name        = "epicbook-production-sg"
+  vpc_id      = aws_vpc.epicbook_vpc.id
   description = "Allow SSH and Web traffic"
 
   ingress {
@@ -34,6 +67,7 @@ resource "aws_instance" "epicbook_server" {
   ami                    = "ami-04680790a315cd58d" # Ubuntu 22.04 LTS (Update for your region)
   instance_type          = var.instance_type
   key_name               = var.key_name
+  subnet_id              = aws_subnet.epicbook_subnet.id
   vpc_security_group_ids = [aws_security_group.epicbook_sg.id]
 
   tags = {
