@@ -1,0 +1,66 @@
+services:
+  # --- DATABASE SERVICE ---
+  db:
+    image: mysql:8.0
+    container_name: epicbook-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: bookstore
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - backend-nw
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s # MySQL takes longer to initialize than Mongo
+
+  # --- BACKEND API ---
+  backend:
+    build: ./backend
+    container_name: epicbook-api
+    restart: always
+    env_file: .env
+    depends_on:
+      - db
+    networks:
+      - backend-nw
+
+  # --- FRONTEND UI ---
+  frontend:
+    build: ./frontend
+    container_name: epicbook-ui
+    restart: always
+    networks:
+      - frontend-nw
+      - backend-nw  # Needs both to talk to Proxy and API
+
+  # --- REVERSE PROXY ---
+  proxy:
+    image: nginx:stable-alpine
+    container_name: epicbook-proxy
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./proxy/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - frontend-nw
+
+networks:
+  frontend-nw:
+    driver: bridge
+  backend-nw:
+    driver: bridge
+
+volumes:
+  db_data:
