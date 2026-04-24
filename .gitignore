@@ -9,9 +9,30 @@
 .env
 .env.local
 .env.*.local
+.txt
+*.pem
+*.key
+*.crt
+
+# --- Terraform Specific ---
+# Ignore local provider binaries and lock files
+.terraform/
+.terraform.lock.hcl
+
+# Ignore terraform state files (highly sensitive, contains infra metadata)
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+
+# Ignore the actual values file (where your IP and keys live)
+terraform.tfvars
+terraform.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
 
 # --- Docker & Logs ---
-# Keep your Dockerfiles, but ignore local logs and data exports
 **/logs/
 *.log
 npm-debug.log*
@@ -20,7 +41,6 @@ yarn-error.log*
 docker-compose.override.yml
 
 # --- Database Persistence ---
-# If you ever use a bind mount instead of a named volume for MySQL
 **/mysql_data/
 **/db_data/
 *.sql
@@ -28,16 +48,9 @@ docker-compose.override.yml
 
 # --- OS & Editor Specific ---
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
 .vscode/
 .idea/
 *.swp
-*.swo
 
 # --- Testing ---
 **/coverage/
