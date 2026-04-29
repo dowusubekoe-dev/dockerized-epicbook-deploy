@@ -1,61 +1,75 @@
 services:
-  app:
-    build: ./app
-    container_name: epicbook-app
-    restart: always
-    env_file: .env
-    networks:
-      - frontend-nw
-      - backend-nw
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 15s
-      timeout: 10s
-      retries: 3
-
-    depends_on:
-      db:
-        condition: service_healthy
-
-  db:
+  # MySQL Database Service
+  database:
     image: mysql:8.0
-    container_name: epicbook-db
-    restart: always
+    container_name: dmi-ch2-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: bookstore
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    restart: unless-stopped
+    env_file: .env
     volumes:
-      - db_data:/var/lib/mysql
-      # Auto-seeds the DB from your manual guide's SQL scripts
-      - ./app/db:/docker-entrypoint-initdb.d:ro
+      - dmi-ch2-db-data:/var/lib/mysql
+      # Adjusted paths to match your root-level 'db' folder
+      - ./db/BuyTheBook_Schema.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro
+      - ./db/author_seed.sql:/docker-entrypoint-initdb.d/2-authors.sql:ro
+      - ./db/books_seed.sql:/docker-entrypoint-initdb.d/3-books.sql:ro
     networks:
-      - backend-nw
+      dmi-ch2-internal:
+        aliases:
+          - database
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$${DB_ROOT_PASSWORD}"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$MYSQL_ROOT_PASSWORD"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
-
-  nginx:
+  # Monolithic App Service (Handles both UI and API)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile # Use the Node.js Dockerfile we discussed
+    container_name: dmi-ch2-app
+    restart: unless-stopped
+    env_file: .env
+    networks:
+      - dmi-ch2-internal
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      # This uses the Node.js 'http' module to ping your /health endpoint
+      test: ["CMD-SHELL", "node -e 'require(\"http\").get(\"http://localhost:8080/health\", (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); })'"]
+      interval: 10s      # Check more frequently once starting
+      timeout: 5s
+      retries: 5
+      start_period: 60s  # 60s is plenty for Node to bind to the port
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+  # Reverse Proxy (Nginx)
+  reverse-proxy:
     image: nginx:alpine
-    container_name: nginx-proxy
+    container_name: dmi-ch2-nginx
+    restart: unless-stopped
     ports:
       - "80:80"
     volumes:
-      - ./proxy/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./proxy/logs:/var/log/nginx
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./logs/nginx:/var/log/nginx
     networks:
-      - frontend-nw
+      - dmi-ch2-internal
     depends_on:
       app:
         condition: service_healthy
 
 networks:
-  frontend-nw:
-    driver: bridge
-  backend-nw:
-    driver: bridge
+  dmi-ch2-internal:
+    name: dmi-ch2-internal
 
 volumes:
-  db_data:
+  dmi-ch2-db-data:
+    name: dmi-ch2-db-data

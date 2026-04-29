@@ -1,0 +1,29 @@
+# 📁 Submission Structure: `Capstone_TheEpicBook_Derek_Owusu_Bekoe.doc`
+
+## **I. Core Infrastructure Files**
+* **`docker-compose.yml`**: Ensure it includes the `healthcheck` and `depends_on: condition: service_healthy` logic.
+* **`Dockerfiles`**: Multi-stage builds for frontend/backend.
+* **`proxy/nginx.conf`**: The working version we just fixed (with the `server` block mapped to `default.conf`).
+
+---
+
+## **II. The `docs/` Folder (High-Priority Markdown)**
+* **`06-logging-layout.md`**:
+    * Explain why you chose **bind mounts** for Nginx logs (host access) vs **stdout** for app logs (Docker native).
+    * Include the screenshot of your `proxy/logs` folder.
+* **`09-runbook.md`**:
+    * Use the **[Runbook](./epicbook-runbook.md)** we just drafted.
+    * **Pro Tip**: Add a "Troubleshooting" section specifically mentioning the `EAI_AGAIN db` fix.
+* **`10-reliability-tests.md`**:
+    * Note that you tested taking the DB down and confirmed the Backend healthcheck failed as expected.
+
+---
+
+## **III. Mandatory Screenshots**
+You need to paste these into your document to get full credit:
+1.  **App Running**: The EpicBook UI visible via your AWS Public IP.
+2.  **API Health**: A screenshot of your browser/Postman hitting `http://<IP>/api/health` returning `200 OK`.
+3.  **The "Golden" Stack**: Your `docker ps` output showing all **3 containers** (Proxy, App, DB) in a "Healthy" state.
+4.  **Persistence Proof**: A screenshot of your `ls -l ./mysql_data` or the Nginx logs appearing on your host after a `docker-compose down/up`.
+
+---

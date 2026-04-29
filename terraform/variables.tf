@@ -1,27 +1,20 @@
 variable "aws_region" {
-  description = "AWS region to deploy the EpicBook VM"
-  type        = string
-  default     = "us-east-1"
+  default = "us-east-1"
 }
 
 variable "instance_type" {
-  description = "EC2 instance size"
-  type        = string
-  default     = "t2.micro"
+  default = "t3.micro"
 }
 
 variable "key_name" {
-  description = "Name of the SSH key pair created in AWS Console"
-  type        = string
+  description = "Name of the existing AWS Key Pair"
 }
 
 variable "my_ip" {
-  description = "Your local public IP address for SSH restriction (e.g., 1.2.3.4)"
   type        = string
+  description = "Your public IP address for SSH access (e.g., 1.2.3.4/32)"
 }
 
 variable "project_name" {
-  description = "Tag name for the infrastructure"
-  type        = string
-  default     = "the-epicbook"
+  default = "epicbook-deployment"
 }
