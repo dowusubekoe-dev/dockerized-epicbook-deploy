@@ -2,10 +2,47 @@ provider "aws" {
   region = var.aws_region
 }
 
-# Security Group: HTTP, HTTPS, and Restricted SSH
+# 1. Custom VPC
+resource "aws_vpc" "epicbook_vpc" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  tags = {
+    Name = "epicbook-custom-vpc"
+  }
+}
+
+# 2. Internet Gateway (Required to reach the internet)
+resource "aws_internet_gateway" "epicbook_igw" {
+  vpc_id = aws_vpc.epicbook_vpc.id
+}
+
+# 3. Public Subnet
+resource "aws_subnet" "epicbook_public_subnet" {
+  vpc_id                  = aws_vpc.epicbook_vpc.id
+  cidr_block              = "10.0.1.0/24"
+  map_public_ip_on_launch = true # Critical for cloud access
+  availability_zone       = "${var.aws_region}a"
+}
+
+# 4. Route Table & Association
+resource "aws_route_table" "epicbook_rt" {
+  vpc_id = aws_vpc.epicbook_vpc.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.epicbook_igw.id
+  }
+}
+
+resource "aws_route_table_association" "epicbook_rta" {
+  subnet_id      = aws_subnet.epicbook_public_subnet.id
+  route_table_id = aws_route_table.epicbook_rt.id
+}
+
+# 5. Security Group (Fixed: Added vpc_id)
 resource "aws_security_group" "epicbook_sg" {
   name        = "${var.project_name}-sg"
   description = "Allow web traffic and restricted SSH"
+  vpc_id      = aws_vpc.epicbook_vpc.id # Linked to your custom VPC
 
   ingress {
     from_port   = 22
@@ -36,15 +73,14 @@ resource "aws_security_group" "epicbook_sg" {
   }
 }
 
-# EC2 Instance Provisioning
+# 6. EC2 Instance (Fixed: Added subnet_id)
 resource "aws_instance" "epicbook_server" {
-  ami           = "ami-0e2c8ccd4e1ffc3c5" # Ubuntu 24.04 LTS (Verify for your region)
-  instance_type = var.instance_type
-  key_name      = var.key_name
-
+  ami                    = "ami-05cf1e9f73fbad2e2"
+  instance_type          = var.instance_type
+  key_name               = var.key_name
+  subnet_id              = aws_subnet.epicbook_public_subnet.id # Place in custom subnet
   vpc_security_group_ids = [aws_security_group.epicbook_sg.id]
 
-  # User Data Script to automate Docker setup
   user_data = <<-EOF
               #!/bin/bash
               apt-get update
