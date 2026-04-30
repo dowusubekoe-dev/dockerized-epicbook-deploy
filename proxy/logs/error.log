@@ -1,0 +1,43 @@
+2026/04/24 15:21:25 [notice] 1#1: using the "epoll" event method
+2026/04/24 15:21:25 [notice] 1#1: nginx/1.29.8
+2026/04/24 15:21:25 [notice] 1#1: built by gcc 15.2.0 (Alpine 15.2.0) 
+2026/04/24 15:21:25 [notice] 1#1: OS: Linux 6.8.0-1046-aws
+2026/04/24 15:21:25 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1024:524288
+2026/04/24 15:21:25 [notice] 1#1: start worker processes
+2026/04/24 15:21:25 [notice] 1#1: start worker process 21
+2026/04/24 15:24:03 [notice] 1#1: signal 3 (SIGQUIT) received, shutting down
+2026/04/24 15:24:03 [notice] 21#21: gracefully shutting down
+2026/04/24 15:24:03 [notice] 21#21: exiting
+2026/04/24 15:24:03 [notice] 21#21: exit
+2026/04/24 15:24:03 [notice] 1#1: signal 17 (SIGCHLD) received from 21
+2026/04/24 15:24:03 [notice] 1#1: worker process 21 exited with code 0
+2026/04/24 15:24:03 [notice] 1#1: exit
+2026/04/24 15:31:19 [notice] 1#1: using the "epoll" event method
+2026/04/24 15:31:19 [notice] 1#1: nginx/1.29.8
+2026/04/24 15:31:19 [notice] 1#1: built by gcc 15.2.0 (Alpine 15.2.0) 
+2026/04/24 15:31:19 [notice] 1#1: OS: Linux 6.8.0-1046-aws
+2026/04/24 15:31:19 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1024:524288
+2026/04/24 15:31:19 [notice] 1#1: start worker processes
+2026/04/24 15:31:19 [notice] 1#1: start worker process 21
+2026/04/24 15:32:31 [notice] 1#1: signal 3 (SIGQUIT) received, shutting down
+2026/04/24 15:32:31 [notice] 21#21: gracefully shutting down
+2026/04/24 15:32:31 [notice] 21#21: exiting
+2026/04/24 15:32:31 [notice] 21#21: exit
+2026/04/24 15:32:31 [notice] 1#1: signal 17 (SIGCHLD) received from 21
+2026/04/24 15:32:31 [notice] 1#1: worker process 21 exited with code 0
+2026/04/24 15:32:31 [notice] 1#1: exit
+2026/04/24 15:39:50 [notice] 1#1: using the "epoll" event method
+2026/04/24 15:39:50 [notice] 1#1: nginx/1.29.8
+2026/04/24 15:39:50 [notice] 1#1: built by gcc 15.2.0 (Alpine 15.2.0) 
+2026/04/24 15:39:50 [notice] 1#1: OS: Linux 6.8.0-1046-aws
+2026/04/24 15:39:50 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1024:524288
+2026/04/24 15:39:50 [notice] 1#1: start worker processes
+2026/04/24 15:39:50 [notice] 1#1: start worker process 21
+2026/04/24 16:02:28 [warn] 21#21: *8 an upstream response is buffered to a temporary file /var/cache/nginx/proxy_temp/1/00/0000000001 while reading upstream, client: 65.34.64.90, server: , request: "GET /assets/css/materialize.css HTTP/1.1", upstream: "http://172.19.0.2:3000/assets/css/materialize.css", host: "34.229.201.215", referrer: "http://34.229.201.215/"
+2026/04/24 16:02:29 [warn] 21#21: *15 an upstream response is buffered to a temporary file /var/cache/nginx/proxy_temp/2/00/0000000002 while reading upstream, client: 65.34.64.90, server: , request: "GET /assets/img/0.png HTTP/1.1", upstream: "http://172.19.0.2:3000/assets/img/0.png", host: "34.229.201.215", referrer: "http://34.229.201.215/"
+2026/04/24 16:02:29 [warn] 21#21: *7 an upstream response is buffered to a temporary file /var/cache/nginx/proxy_temp/3/00/0000000003 while reading upstream, client: 65.34.64.90, server: , request: "GET /assets/js/materialize.js HTTP/1.1", upstream: "http://172.19.0.2:3000/assets/js/materialize.js", host: "34.229.201.215", referrer: "http://34.229.201.215/"
+2026/04/24 16:02:29 [warn] 21#21: *15 an upstream response is buffered to a temporary file /var/cache/nginx/proxy_temp/4/00/0000000004 while reading upstream, client: 65.34.64.90, server: , request: "GET /assets/img/2.png HTTP/1.1", upstream: "http://172.19.0.2:3000/assets/img/2.png", host: "34.229.201.215", referrer: "http://34.229.201.215/"
+2026/04/24 16:02:29 [warn] 21#21: *24 an upstream response is buffered to a temporary file /var/cache/nginx/proxy_temp/5/00/0000000005 while reading upstream, client: 65.34.64.90, server: , request: "GET /assets/img/3.png HTTP/1.1", upstream: "http://172.19.0.2:3000/assets/img/3.png", host: "34.229.201.215", referrer: "http://34.229.201.215/"
+2026/04/24 16:02:29 [warn] 21#21: *12 an upstream response is buffered to a temporary file /var/cache/nginx/proxy_temp/6/00/0000000006 while reading upstream, client: 65.34.64.90, server: , request: "GET /assets/img/5.png HTTP/1.1", upstream: "http://172.19.0.2:3000/assets/img/5.png", host: "34.229.201.215", referrer: "http://34.229.201.215/"
+2026/04/24 16:02:29 [warn] 21#21: *8 an upstream response is buffered to a temporary file /var/cache/nginx/proxy_temp/7/00/0000000007 while reading upstream, client: 65.34.64.90, server: , request: "GET /assets/img/4.png HTTP/1.1", upstream: "http://172.19.0.2:3000/assets/img/4.png", host: "34.229.201.215", referrer: "http://34.229.201.215/"
+2026/04/24 16:02:29 [warn] 21#21: *13 an upstream response is buffered to a temporary file /var/cache/nginx/proxy_temp/8/00/0000000008 while reading upstream, client: 65.34.64.90, server: , request: "GET /assets/img/6.png HTTP/1.1", upstream: "http://172.19.0.2:3000/assets/img/6.png", host: "34.229.201.215", referrer: "http://34.229.201.215/"
