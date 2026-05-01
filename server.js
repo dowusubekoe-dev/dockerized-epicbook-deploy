@@ -10,10 +10,8 @@ const PORT = process.env.PORT || 8080;
 
 const app = express();
 
-const cors = require('express').Router;
-// Or if cors package is installed:
 const cors = require('cors');
-app.use(cors({ origin: 'http://52.54.106.126' }));
+app.use(cors({ origin: '*' }));
 
 // Serve static content for the app from the "public" directory in the application directory.
 app.use(express.static("public"));
@@ -21,6 +19,11 @@ app.use(express.static("public"));
 // Parse application body
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
 
 app.engine("handlebars", exphbs({ defaultLayout: "main" }));
 app.set("view engine", "handlebars");

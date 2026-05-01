@@ -1,45 +1,67 @@
-# Reliability & Chaos Engineering Tests
+cat > docs/10-reliability-tests.md << 'EOF'
+# Reliability Tests
 
-## 1. Test Objectives
-The goal of these tests is to validate the **Operational Hardening** of the [TheEpicBook](https://github.com/pravinmishraaws/theepicbook) stack. We aim to confirm that the healthchecks, restart policies, and networking configurations behave as expected during service failures.
+## Test 1 — Restart Backend Only
 
----
+### Steps
+```bash
+docker compose restart app
+docker compose logs -f app
+```
 
-## 2. Test Scenarios & Results
-
-### Scenario A: Backend Service Failure
-* **Action:** Manually stop the `dmi-ch2-backend` container while the rest of the stack is running.
-* **Expected Behavior:** * The Nginx proxy should return a `502 Bad Gateway` or a custom error page.
-    * The Docker `restart: unless-stopped` policy should trigger an automatic recreation of the container.
-* **Actual Result:** **PASS**. The container restarted within 5 seconds, and the UI resumed normal operation without manual intervention.
-
-### Scenario B: Database Connectivity Loss
-* **Action:** Stop the `dmi-ch2-mysql` container.
-* **Expected Behavior:** * The Backend healthcheck should fail (verified via `docker ps`).
-    * The Nginx proxy should stop routing traffic to the backend to prevent hanging requests.
-    * The UI should display a "Service Temporarily Unavailable" message.
-* **Actual Result:** **PASS**. Healthchecks correctly identified the DB outage, and the stack recovered fully once the DB was restarted.
-
-### Scenario C: Stack "Bounce" & Persistence
-* **Action:** Execute `docker compose down` followed by `docker compose up -d`.
-* **Expected Behavior:** * All containers are destroyed and recreated.
-    * The application should load with all previously entered data intact.
-* **Actual Result:** **PASS**. Verified that the `dmi-ch2-db-data` volume persisted the MySQL records across the full stack teardown.
+### Expected Result
+- App briefly unavailable during restart
+- Nginx returns 502 Bad Gateway during restart
+- App recovers automatically within ~30 seconds
+- No data lost
 
 ---
 
-## 3. Reliability Metrics
-During the tests, the following observations were recorded via the **JSON Logs**:
+## Test 2 — Take DB Down
 
-| Event | Recovery Time | Log Status |
-| :--- | :--- | :--- |
-| Backend Restart | ~8 Seconds | `502` → `200` |
-| Database Recovery | ~15 Seconds | `503` → `200` |
-| Full Stack Boot | ~25 Seconds | All `(healthy)` |
+### Steps
+```bash
+docker compose stop db
+curl http://localhost
+docker compose start db
+curl http://localhost
+```
 
-
+### Expected Result
+- App returns 500 error when DB is down
+- Healthcheck shows db as unhealthy
+- App recovers automatically when DB restarts
 
 ---
 
-## 4. Final Conclusion
-The [TheEpicBook](https://github.com/pravinmishraaws/theepicbook) deployment meets all production-ready criteria. The combination of **Multi-stage builds**, **Network Isolation**, and **Automated Healthchecks** ensures that the application can self-heal from standard service interruptions.
+## Test 3 — Full Stack Bounce (Persistence Test)
+
+### Steps
+```bash
+# Note current data (books in cart etc.)
+docker compose down      # NO -v flag
+docker compose up -d
+curl http://localhost
+```
+
+### Expected Result
+- All data present after restart
+- db_data volume preserved
+- App fully functional within 60 seconds
+
+---
+
+## Test 4 — Verify Ports Are Not Exposed
+
+```bash
+# From external machine or EC2 itself:
+curl http://<EC2_IP>:3000   # Should timeout
+curl http://<EC2_IP>:3306   # Should timeout
+curl http://<EC2_IP>:80     # Should return HTML
+```
+
+### Expected Result
+- Port 80: returns EpicBook homepage HTML
+- Port 3000: connection refused/timeout
+- Port 3306: connection refused/timeout
+EOF

@@ -1,81 +1,74 @@
-# CI/CD Pipeline Strategy (Azure Pipelines)
+cat > docs/09-runbook.md << 'EOF'
+# Operations Runbook — TheEpicBook
 
-## 1. Pipeline Overview
-The goal of this pipeline is to achieve a **Fully Automated Deployment** flow. By using Azure Pipelines, we eliminate the need for manual file transfers or manual `docker-compose` commands on the VM.
+## Stack Management
 
-* **Trigger:** Automatic execution on every `push` or `merge` to the `main` branch.
-* **Agent:** Ubuntu-latest (hosted by Azure).
-
----
-
-## 2. Pipeline Stages
-
-### Stage 1: Build & Push (CI)
-The pipeline logs into the **Azure Container Registry (ACR)** and builds the multi-stage Docker images defined in Phase 1.
-* **Tagging Strategy:** Each image is tagged with the `Build.BuildId` (unique increment) and `latest` for the production rollout.
-* **Images Built:** * `dmi-ch2-frontend`
-    * `dmi-ch2-backend`
-
-### Stage 2: Secure Deployment (CD)
-Once the images are in the registry, the pipeline uses an **SSH Task** to connect to the Cloud VM.
-1.  **Registry Login:** The VM logs into ACR to pull the fresh images.
-2.  **Pull:** `docker compose pull` retrieves the new layers.
-3.  **Rollout:** `docker compose up -d` restarts only the updated containers with zero downtime for the database.
-
----
-
-## 3. Pipeline YAML Configuration (Blueprint)
-```yaml
-trigger:
-  - main
-
-variables:
-  dockerRegistryServiceConnection: 'acr-service-connection'
-  imageRepositoryFrontend: 'dmi-ch2-frontend'
-  imageRepositoryBackend: 'dmi-ch2-backend'
-  containerRegistry: 'dmizone.azurecr.io'
-
-stages:
-- stage: Build
-  jobs:
-  - job: BuildAndPush
-    steps:
-    - task: Docker@2
-      displayName: "Build Frontend Image"
-      inputs:
-        command: buildAndPush
-        repository: $(imageRepositoryFrontend)
-        dockerfile: 'frontend/Dockerfile'
-
-    - task: Docker@2
-      displayName: "Build Backend Image"
-      inputs:
-        command: buildAndPush
-        repository: $(imageRepositoryBackend)
-        dockerfile: 'backend/Dockerfile'
-
-- stage: Deploy
-  dependsOn: Build
-  jobs:
-  - job: DeployToVM
-    steps:
-    - task: SSH@0
-      inputs:
-        sshEndpoint: 'dmi-ch2-vm-ssh'
-        runOptions: 'commands'
-        commands: |
-          cd /home/azureuser/theepicbook
-          docker compose pull
-          docker compose up -d
+### Start the Stack
+```bash
+cd /home/ubuntu/dockerized-epicbook-deploy
+docker compose up -d
 ```
 
----
+### Stop the Stack (preserve data)
+```bash
+docker compose down
+```
 
-## 4. Security & Artifact Management
-* **Secrets Management:** The `.env` file is **not** stored in Git. Instead, variables like `MYSQL_PASSWORD` are stored in **Azure DevOps Variable Groups** and injected into the VM during the deployment stage.
-* **Version Control:** By using the `BuildId` tag, we can easily "Rollback" to a previous version of the image if the current deployment fails.
+### Stop and Wipe All Data
+```bash
+docker compose down -v   # WARNING: deletes database
+```
 
----
+### Rebuild After Code Change
+```bash
+docker compose up -d --build
+```
 
-## 5. Visual CI/CD Flow
+### Check Status
+```bash
+docker compose ps
+```
 
+## Log Locations
+| Log | Location |
+|-----|----------|
+| Nginx access | ./logs/nginx/access.log |
+| Nginx error | ./logs/nginx/error.log |
+| App logs | docker compose logs app |
+| DB logs | docker compose logs db |
+
+## Rotating Secrets
+1. Update .env with new passwords
+2. Run: docker compose down -v
+3. Run: docker compose up -d --build
+Note: -v wipes the DB volume so MySQL recreates with new password
+
+## Backup & Restore
+```bash
+# Backup
+docker compose exec db mysqldump -u root -pRootPass123 bookstore \
+  > backup_$(date +%Y%m%d).sql
+
+# Restore
+cat backup_20260501.sql | docker compose exec -T db \
+  mysql -u root -pRootPass123 bookstore
+```
+
+## Rollback Procedure
+```bash
+# Roll back to previous Git commit
+git log --oneline          # find previous commit hash
+git checkout <commit-hash>
+docker compose up -d --build
+```
+
+## Common Errors & Fixes
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| ECONNREFUSED on port 3306 | App started before DB ready | Wait — app retries automatically |
+| Access denied for user | Password mismatch | docker compose down -v, fix .env, restart |
+| Proxy shows Created not Up | Port 80 conflict | sudo ss -tlnp grep 80, kill conflict |
+| Cannot find module 'x' | Package not in package.json | npm install x --save, rebuild |
+| Dialect needs to be supplied | JAWSDB_URL missing | Check .env has JAWSDB_URL, check env_file in compose |
+EOF

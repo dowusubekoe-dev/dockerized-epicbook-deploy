@@ -1,27 +1,43 @@
-# Objective: Manage traffic flow and cross-origin security.
+cat > docs/04-proxy-routing-and-cors.md << 'EOF'
+# Proxy Routing & CORS
 
-✅ Phase 4 — Reverse Proxy & CORS
-DONE
+## Nginx Configuration
 
-Nginx routes / → app:3000
-Nginx routes /assets/ → app:3000/assets/
-Security headers: X-Frame-Options, X-Content-Type-Options
+File: `proxy/nginx.conf`
 
-Installed cors on the EC2 instance and added the code below to the `server.js`
+### Routes
+| Path | Proxied To | Purpose |
+|------|-----------|---------|
+| / | http://app:3000 | All app routes (HTML + API) |
+| /assets/ | http://app:3000/assets/ | Static files |
+| /health | http://app:3000/health | Health check endpoint |
 
+### CORS
+CORS is handled in `server.js` using the `cors` npm package:
 ```js
-
-const cors = require('express').Router;
-// Or if cors package is installed:
 const cors = require('cors');
-app.use(cors({ origin: 'http://<YOUR_EC2_IP>' }));
-
+app.use(cors({ origin: '*' }));
+```
+This allows all origins — suitable for development/demo.
+For production, restrict to your domain:
+```js
+app.use(cors({ origin: 'http://<EC2_PUBLIC_IP>' }));
 ```
 
-- **Routing:** * location / → Proxies to frontend-svc:80.
+### Security Headers
+```nginx
+add_header X-Frame-Options "SAMEORIGIN";
+add_header X-Content-Type-Options "nosniff";
+```
 
-    - **location /api:** Proxies to backend-svc:3000.
-
-- **CORS:** The backend is configured to allow requests from the public IP of the VM. This was verified by successfully loading the book list in the browser without "Blocked by CORS" errors.
-
-Resolved 404 errors for static assets by correcting the COPY instruction in the production stage of the Dockerfile to include the public/ directory. Additionally, performed a SQL update to align the imagePath column in the Book table with the Express.js static routing convention."
+### Structured JSON Logging
+```nginx
+log_format json_combined escape=json
+  '{"time":"$time_local",'
+  '"ip":"$remote_addr",'
+  '"request":"$request",'
+  '"status":"$status",'
+  '"bytes":"$body_bytes_sent",'
+  '"response_time":"$request_time"}';
+```
+EOF

@@ -1,27 +1,47 @@
-# Objective: Ensure high availability and correct startup sequence.
+cat > docs/03-healthchecks-and-depends-on.md << 'EOF'
+# Healthchecks & Startup Order
 
-✅ Phase 3 — Healthchecks & Startup Order
-DONE
+## Startup Sequence
 
-db healthcheck: mysqladmin ping
-app healthcheck: wget http://localhost:3000/
-depends_on: condition: service_healthy on app waiting for db
+db (healthcheck: mysqladmin ping)
+└── app (healthcheck: wget localhost:3000)
+└── proxy (starts after app)
 
-I added the code below to `routes/html-routes.js`
-
-```js
-// Add this route
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
-});
+## DB Healthcheck
+```yaml
+healthcheck:
+  test: ["CMD", "mysqladmin", "ping", "-h", "localhost",
+         "-u", "root", "--password=${MYSQL_ROOT_PASSWORD}"]
+  interval: 10s
+  timeout: 5s
+  retries: 5
+  start_period: 30s
 ```
 
-- **Logic:** The nginx-proxy depends on the epicbook-app, which in turn depends on epicbook-db.
+## App Healthcheck
+```yaml
+healthcheck:
+  test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 25s
+```
 
-- **Healthcheck Configuration:**
+## depends_on Configuration
+```yaml
+app:
+  depends_on:
+    db:
+      condition: service_healthy
 
-    - **Database:** Uses mysqladmin ping to ensure the service is ready to accept queries.
-    - **App:** Uses a wget spider to check http://localhost:3000/. A start_period of 45s is used to allow the Node.js app sufficient time to establish a database handshake. Implemented a 60-second start_period for the application healthcheck to account for the Sequelize synchronization process with the MySQL database, ensuring the container is only marked 'Healthy' once the database schema is fully initialized.
+proxy:
+  depends_on:
+    - app
+```
 
-- **Result:** This prevents the proxy from sending traffic to a container that is still initializing.
-
+## Why This Matters
+Without healthchecks, the app would start before MySQL finishes
+initializing and crash with ECONNREFUSED. The healthcheck ensures
+MySQL is fully ready before Sequelize attempts to connect.
+EOF
