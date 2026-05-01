@@ -12,6 +12,12 @@ crash.*.log
 .terraform.lock.hcl
 terraform.tfvars
 terraform.tfvars.json
+# Terraform
+terraform/.terraform/
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
 
 # Claude AI / Local AI files
 # (Adjust the filename below to match your exact Claude file)
