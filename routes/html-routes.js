@@ -106,10 +106,15 @@ router.get("/cart", async (req, res) => {
     .catch((err) => console.log(err));
 });
 
+// Add this route
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 //gallery route
 router.get("/gallery", async (req, res) => {
   res.render("gallery", {
-  
+
   });
 });
 

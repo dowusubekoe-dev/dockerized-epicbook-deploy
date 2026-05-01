@@ -41,6 +41,21 @@ The EpicBook application is deployed as a containerized microservices stack usin
 | **Backend** | `dmi-ch2-backend` | Node.js API that processes business logic and communicates with the DB. |
 | **Database** | `dmi-ch2-mysql` | Persistent MySQL storage for books, authors, and users. |
 
+✅ Phase 0 — App Discovery & Architecture
+DONE
+
+Identified services: Node.js app (frontend + backend), MySQL, Nginx
+Identified env vars: JAWSDB_URL, MYSQL_*, NODE_ENV, PORT
+Ports: 80 public (nginx), 3000 internal (app), 3306 internal (db)
+Component diagram: Internet → Nginx:80 → App:3000 → MySQL:3306
+
+✅ Phase 1 — Multi-Stage Dockerfiles
+DONE
+
+Multi-stage Dockerfile created (builder + runner stages)
+.dockerignore created excluding node_modules, .git, .env, terraform/ etc.
+Size benefit: builder installs all deps, runner copies only production artifacts
+
 ---
 
 ## 2. Visual Workflow
@@ -76,3 +91,4 @@ To adhere to the principle of **Least Privilege**, the stack is divided into two
 
 ## 5. Persistence Logic
 Database records are persisted using a **named volume** (`dmi-ch2-db-data`). This ensures that even if the containers are removed (`docker compose down`), the books and author data are stored on the host VM's disk and reattached upon the next start.
+

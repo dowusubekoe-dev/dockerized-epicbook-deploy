@@ -1,5 +1,13 @@
 # Objective: Document the environment configuration and network access control.
 
+✅ Phase 2 — Compose Stack & Networks
+DONE
+
+docker-compose.yml has all 3 services: proxy, app, db
+Two networks: frontend (proxy↔app), backend (app↔db)
+DB port 3306 NOT published publicly
+Named volume: db_data
+
 - **Environment Variables:**
 
     - DB_USER: root

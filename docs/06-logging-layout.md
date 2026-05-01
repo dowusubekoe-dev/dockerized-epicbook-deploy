@@ -1,5 +1,20 @@
 # Logging & Observability Layout
 
+
+✅ Phase 6 — Logging & Observability
+DONE
+
+Nginx logs → bind-mount ./logs/nginx/ (readable on host)
+App logs → stdout (docker compose logs app)
+Structured JSON logging added to proxy/nginx.conf
+
+```bash
+
+cat logs/nginx/access.log
+docker compose logs app | tail -20
+
+```
+
 ## 1. Logging Strategy Overview
 To maintain production-grade visibility, we use a hybrid logging approach. The goal is to ensure that logs are both human-readable for quick debugging and machine-readable for future automated analysis.
 

@@ -10,6 +10,11 @@ const PORT = process.env.PORT || 8080;
 
 const app = express();
 
+const cors = require('express').Router;
+// Or if cors package is installed:
+const cors = require('cors');
+app.use(cors({ origin: 'http://52.54.106.126' }));
+
 // Serve static content for the app from the "public" directory in the application directory.
 app.use(express.static("public"));
 
