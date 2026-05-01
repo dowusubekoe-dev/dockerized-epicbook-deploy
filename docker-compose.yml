@@ -1,75 +1,72 @@
+
 services:
-  # MySQL Database Service
-  database:
+
+  # ── MySQL Database ──────────────────────────────────────────────
+  db:
     image: mysql:8.0
-    container_name: dmi-ch2-mysql
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
     restart: unless-stopped
-    env_file: .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE:      ${MYSQL_DATABASE}
+      MYSQL_USER:          ${MYSQL_USER}
+      MYSQL_PASSWORD:      ${MYSQL_PASSWORD}
     volumes:
-      - dmi-ch2-db-data:/var/lib/mysql
-      # Adjusted paths to match your root-level 'db' folder
-      - ./db/BuyTheBook_Schema.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro
-      - ./db/author_seed.sql:/docker-entrypoint-initdb.d/2-authors.sql:ro
-      - ./db/books_seed.sql:/docker-entrypoint-initdb.d/3-books.sql:ro
+      - db_data:/var/lib/mysql
+      # Seed files run automatically on first boot (volume empty)
+      - ./db/BuyTheBook_Schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/author_seed.sql:/docker-entrypoint-initdb.d/02-author.sql:ro
+      - ./db/books_seed.sql:/docker-entrypoint-initdb.d/03-books.sql:ro
     networks:
-      dmi-ch2-internal:
-        aliases:
-          - database
+      - backend
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$MYSQL_ROOT_PASSWORD"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost",
+             "-u", "root", "--password=${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+    # Port 3306 intentionally NOT published — private only
 
-  # Monolithic App Service (Handles both UI and API)
+  # ── Node.js Application ─────────────────────────────────────────
   app:
     build:
       context: .
-      dockerfile: Dockerfile # Use the Node.js Dockerfile we discussed
-    container_name: dmi-ch2-app
+      dockerfile: Dockerfile
     restart: unless-stopped
     env_file: .env
+    environment:
+      NODE_ENV: production
     networks:
-      - dmi-ch2-internal
+      - backend
+      - frontend
     depends_on:
-      database:
+      db:
         condition: service_healthy
     healthcheck:
-      # This uses the Node.js 'http' module to ping your /health endpoint
-      test: ["CMD-SHELL", "node -e 'require(\"http\").get(\"http://localhost:8080/health\", (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); })'"]
-      interval: 10s      # Check more frequently once starting
-      timeout: 5s
-      retries: 5
-      start_period: 60s  # 60s is plenty for Node to bind to the port
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 512M
-  # Reverse Proxy (Nginx)
-  reverse-proxy:
-    image: nginx:alpine
-    container_name: dmi-ch2-nginx
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 65s
+    # Port 3000 intentionally NOT published — nginx proxies it
+
+  # ── Nginx Reverse Proxy ──────────────────────────────────────────
+  proxy:
+    image: nginx:1.25-alpine
     restart: unless-stopped
     ports:
       - "80:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./logs/nginx:/var/log/nginx
+      - ./proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./logs/nginx:/var/log/nginx   # bind-mount → readable on host
     networks:
-      - dmi-ch2-internal
+      - frontend
     depends_on:
-      app:
-        condition: service_healthy
+      - app
 
 networks:
-  dmi-ch2-internal:
-    name: dmi-ch2-internal
+  frontend:   # proxy ↔ app
+  backend:    # app ↔ db  (db never touches the frontend network)
 
 volumes:
-  dmi-ch2-db-data:
-    name: dmi-ch2-db-data
+  db_data:    # MySQL data persists across restarts

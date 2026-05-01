@@ -1,25 +1,28 @@
-# STAGE 1: Build Stage
-FROM node:18-alpine AS builder
+# ── Stage 1: Install dependencies ──────────────────────────────
+FROM node:20-alpine AS builder
+
 WORKDIR /app
+
 COPY package*.json ./
-# Install all dependencies (including devDeps if any)
-RUN npm install
+RUN npm ci --only=production
+
+# ── Stage 2: Lean production image ─────────────────────────────
+FROM node:20-alpine AS runner
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+COPY --from=builder /app/node_modules ./node_modules
 COPY . .
 
-# Stage 2: Production
-FROM node:18-slim
-WORKDIR /app
+RUN chown -R appuser:appgroup /app
 
-# 1. Copy dependencies
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
+USER appuser
 
-# 2. Copy the ENTIRE application directory
-# This ensures all folders (routes, models, config, public) are present
-COPY --from=builder /app ./
+EXPOSE 3000
 
-# 3. Permissions for the assets
-RUN chmod -R 755 /app/public
+HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
+  CMD wget -qO- http://localhost:3000/ || exit 1
 
-EXPOSE 8080
 CMD ["node", "server.js"]

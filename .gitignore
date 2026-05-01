@@ -1,2 +1,26 @@
 node_modules
 .DS_Store
+
+# Terraform specific files
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+terraform.tfvars.json
+
+# Claude AI / Local AI files
+# (Adjust the filename below to match your exact Claude file)
+claude.ai
+.claude/
+claude_config.json
+agents.md
+CLAUDE.md
+memory.md
+skills.md
+*.log
+.env

@@ -1,7 +1,7 @@
 {
   "development": {
     "username": "root",
-    "password": "demo1234",
+    "password": "BenefitWallet2026!",
     "database": "bookstore",
     "host": "127.0.0.1",
     "dialect": "mysql"
@@ -14,7 +14,14 @@
     "dialect": "mysql"
   },
   "production": {
-    "use_env_variable":"JAWSDB_URL",
-    "dialect": "mysql"
+    "use_env_variable": "JAWSDB_URL",
+    "dialect": "mysql",
+    "logging": false,
+    "pool": {
+      "max": 5,
+      "min": 0,
+      "acquire": 30000,
+      "idle": 10000
+    }
   }
 }
